@@ -1,3 +1,7 @@
+import warnings
+warnings.filterwarnings('ignore', '.*hashlib.*',
+                        DeprecationWarning)
+
 import gdata.docs.service
 import gdata.spreadsheet.service
 import keychain, paramiko, socket, sys
