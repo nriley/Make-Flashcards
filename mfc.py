@@ -4,7 +4,7 @@ warnings.filterwarnings('ignore', '.*hashlib.*',
 
 import gdata.docs.service
 import gdata.spreadsheet.service
-import keychain, paramiko, socket, sys
+import keychain, paramiko, sys
 from getpass import getpass
 
 GMAIL  = 'nriley' + '@gmail.com'
@@ -52,11 +52,9 @@ if __name__ == '__main__':
         keychain_item = None
 
     print >> sys.stderr, 'Connecting to', HOST
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.connect((HOST, 22))
-    transport = paramiko.Transport(sock)
-    transport.start_client()
-    transport.auth_password(USER, ssh_password)
+    transport = paramiko.Transport((HOST, 22))
+    transport.connect(username=USER, password=ssh_password)
+    sftp = paramiko.SFTPClient.from_transport(transport)
 
     if ssh_password and not keychain_item:
         keychain.AddInternetPassword(serverName=HOST, accountName=USER,
@@ -70,13 +68,11 @@ if __name__ == '__main__':
         title = doc.title.text
         print >> sys.stderr, 'Uploading:', title
         sheet = sheet_as_text(docID).split('\n', 1)[-1] # strip header row
-        channel = transport.open_session()
-        channel.exec_command('scp -v -t %s' % PATH)
-        channel.send('C0644 %d %s.txt\n' % (len(sheet), title))
-        channel.send(sheet)
-        channel.close()
+        path = '%s/%s.txt' % (PATH, title)
+        sftp.open(path, 'w').write(sheet)
+        sftp.chmod(path, 0644)
 
+    sftp.close()
     print >> sys.stderr, 'PROGRESS:100'
 
     transport.close()
-    sock.close()
