@@ -67,7 +67,9 @@ if __name__ == '__main__':
         docID = doc.resourceId.text
         title = doc.title.text
         print >> sys.stderr, 'Uploading:', title
-        sheet = sheet_as_text(docID).split('\n', 1)[-1] # strip header row
+        header_row, sheet = sheet_as_text(docID).split('\n', 1)
+        if 'Text 1' in header_row: # new format; retain header row
+            sheet = '\n'.join((header_row, sheet))
         path = '%s/%s.txt' % (PATH, title)
         sftp.open(path, 'w').write(sheet)
         sftp.chmod(path, 0644)
